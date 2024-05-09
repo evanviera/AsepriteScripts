@@ -18,66 +18,69 @@ if err ~= 0 then return err end
 
 -- Variable to keep track of the number of layers exported.
 local n_layers = 0
--- Exports every layer individually.
+-- Exports every layer individually, ignoring layers starting with "_REF".
 local function exportLayers(sprite, root_layer, filename, group_sep, data)
     for _, layer in ipairs(root_layer.layers) do
-        local filename = filename
-        if layer.isGroup then
-            -- Recursive for groups.
-            local previousVisibility = layer.isVisible
-            layer.isVisible = true
-            filename = filename:gsub("{layergroups}",
-                                     layer.name .. group_sep .. "{layergroups}")
-            exportLayers(sprite, layer, filename, group_sep, data)
-            layer.isVisible = previousVisibility
-        else
-            -- Individual layer. Export it.
-            layer.isVisible = true
-            filename = filename:gsub("{layergroups}", "")
-            filename = filename:gsub("{layername}", layer.name)
-            os.execute("mkdir \"" .. Dirname(filename) .. "\"")
-            if data.spritesheet then
-                local sheettype=SpriteSheetType.HORIZONTAL
-                if (data.tagsplit == "To Rows") then
-                    sheettype=SpriteSheetType.ROWS
-                elseif (data.tagsplit == "To Columns") then
-                    sheettype=SpriteSheetType.COLUMNS
-                end
-                app.command.ExportSpriteSheet{
-                    ui=false,
-                    askOverwrite=false,
-                    type=sheettype,
-                    columns=0,
-                    rows=0,
-                    width=0,
-                    height=0,
-                    bestFit=false,
-                    textureFilename=filename,
-                    dataFilename="",
-                    dataFormat=SpriteSheetDataFormat.JSON_HASH,
-                    borderPadding=0,
-                    shapePadding=0,
-                    innerPadding=0,
-                    trim=data.trim,
-                    mergeDuplicates=data.mergeDuplicates,
-                    extrude=false,
-                    openGenerated=false,
-                    layer="",
-                    tag="",
-                    splitLayers=false,
-                    splitTags=(data.tagsplit ~= "No"),
-                    listLayers=layer,
-                    listTags=true,
-                    listSlices=true,
-                }
+        if not layer.name:match("^_REF") then
+            local filename = filename
+            if layer.isGroup then
+                -- Recursive for groups.
+                local previousVisibility = layer.isVisible
+                layer.isVisible = true
+                filename = filename:gsub("{layergroups}",
+                                         layer.name .. group_sep .. "{layergroups}")
+                exportLayers(sprite, layer, filename, group_sep, data)
+                layer.isVisible = previousVisibility
             else
-                sprite:saveCopyAs(filename)
+                -- Individual layer. Export it.
+                layer.isVisible = true
+                filename = filename:gsub("{layergroups}", "")
+                filename = filename:gsub("{layername}", layer.name)
+                os.execute("mkdir \"" .. Dirname(filename) .. "\"")
+                if data.spritesheet then
+                    local sheettype=SpriteSheetType.HORIZONTAL
+                    if (data.tagsplit == "To Rows") then
+                        sheettype=SpriteSheetType.ROWS
+                    elseif (data.tagsplit == "To Columns") then
+                        sheettype=SpriteSheetType.COLUMNS
+                    end
+                    app.command.ExportSpriteSheet{
+                        ui=false,
+                        askOverwrite=false,
+                        type=sheettype,
+                        columns=0,
+                        rows=0,
+                        width=0,
+                        height=0,
+                        bestFit=false,
+                        textureFilename=filename,
+                        dataFilename="",
+                        dataFormat=SpriteSheetDataFormat.JSON_HASH,
+                        borderPadding=0,
+                        shapePadding=0,
+                        innerPadding=0,
+                        trim=data.trim,
+                        mergeDuplicates=data.mergeDuplicates,
+                        extrude=false,
+                        openGenerated=false,
+                        layer="",
+                        tag="",
+                        splitLayers=false,
+                        splitTags=(data.tagsplit ~= "No"),
+                        listLayers=layer,
+                        listTags=true,
+                        listSlices=true,
+                    }
+                else
+                    sprite:saveCopyAs(filename)
+                end
+                layer.isVisible = false
+                n_layers = n_layers + 1
             end
-            layer.isVisible = false
-            n_layers = n_layers + 1
         end
     end
 end
+
 
 -- Open main dialog.
 local dlg = Dialog("Export layers")
@@ -95,7 +98,7 @@ dlg:entry{
 dlg:combobox{
     id = 'format',
     label = 'Export Format:',
-    option = 'png',
+    option = 'bmp',
     options = {'bmp','png', 'gif', 'jpg'}
 }
 dlg:combobox{
