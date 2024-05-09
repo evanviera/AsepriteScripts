@@ -94,7 +94,7 @@ dlg:combobox{
     id = 'format',
     label = 'Export Format:',
     option = 'png',
-    options = {'png', 'gif', 'jpg'}
+    options = {'bmp','png', 'gif', 'jpg'}
 }
 dlg:combobox{
     id = 'group_sep',
