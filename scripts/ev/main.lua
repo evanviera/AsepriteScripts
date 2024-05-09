@@ -11,6 +11,7 @@ Made by Gaspi.
 - Web: https://gaspi.games/
 - Twitter: @_Gaspi
 
+Modified: Evan Viera
 --]]
 
 -- Auxiliary functions

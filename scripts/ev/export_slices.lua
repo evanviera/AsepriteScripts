@@ -23,7 +23,9 @@ Made by Gaspi. Commissioned by Imvested.
    - Web: https://gaspi.games/
    - Twitter: @_Gaspi
 
---]]
+
+Modified: Evan Viera
+   --]]
 
 -- Import main.
 local err = dofile("main.lua")
