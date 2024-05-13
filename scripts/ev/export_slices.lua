@@ -47,8 +47,8 @@ dlg:entry{
 dlg:combobox{
     id = 'format',
     label = 'Export Format:',
-    option = 'png',
-    options = {'png', 'gif', 'jpg'}
+    option = 'bmp',
+    options = {'bmp', 'png', 'gif', 'jpg'}
 }
 dlg:slider{id = 'scale', label = 'Export Scale:', min = 1, max = 10, value = 1}
 dlg:check{id = "save", label = "Save sprite:", selected = false}
