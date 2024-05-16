@@ -1,8 +1,11 @@
--- Import PNG files into an open Aseprite file as new layers.
+-- Import PNG files into an open Aseprite file as new layers, spaced out based on the defined grid size.
 
 -- Function to import PNG files
 local function importPNGFiles(sprite, directory)
   local files = app.fs.listFiles(directory)
+  local gridWidth, gridHeight = sprite.gridBounds.width, sprite.gridBounds.height
+  local col, row = 0, 0
+
   for i, file in ipairs(files) do
       if file:match("%.png$") then
           local filePath = app.fs.joinPath(directory, file)
@@ -10,9 +13,29 @@ local function importPNGFiles(sprite, directory)
           if newSprite then
               local newLayer = sprite:newLayer()
               newLayer.name = app.fs.fileTitle(filePath)
-              app.command.CopyMerged()
-              sprite:newCel(newLayer, 1, Image(newSprite))
+
+              -- Create a new image with the size of the grid cell
+              local image = Image(gridWidth, gridHeight)
+              image:clear()
+
+              -- Center the newSprite image in the grid cell
+              local xOffset = math.floor((gridWidth - newSprite.width) / 2)
+              local yOffset = math.floor((gridHeight - newSprite.height) / 2)
+              image:drawImage(newSprite.cels[1].image, Point(xOffset, yOffset))
+
+              -- Add the new image to the sprite
+              local cel = sprite:newCel(newLayer, 1)
+              cel.image = image
+              cel.position = Point(col * gridWidth, row * gridHeight)
+
               newSprite:close()
+
+              -- Update column and row for the next image
+              col = col + 1
+              if col * gridWidth >= sprite.width then
+                  col = 0
+                  row = row + 1
+              end
           else
               app.alert("Error loading file: " .. filePath)
           end
