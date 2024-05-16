@@ -38,29 +38,19 @@ local function importPNGFiles(sprite, directory)
   end
 end
 
--- Open a dialog to select the directory containing PNG files
-local dlg = Dialog("Import PNGs")
-dlg:file{
-  id = "directory",
-  label = "Directory:",
-  open = true,
-  filename = app.fs.filePath(app.activeSprite.filename)
-}
-dlg:button{
-  id = "ok",
-  text = "Import",
-  onclick = function()
-      local data = dlg.data
-      local sprite = app.activeSprite
-      if sprite and data.directory then
-          app.transaction(function()
-              importPNGFiles(sprite, data.directory)
-          end)
-          app.alert("Import completed successfully!")
-      else
-          app.alert("No directory selected or no active sprite.")
-      end
+-- Function to start the import process
+local function startImport()
+  local sprite = app.activeSprite
+  if sprite then
+      local directory = app.fs.filePath(sprite.filename)
+      app.transaction(function()
+          importPNGFiles(sprite, directory)
+      end)
+      app.alert("Import completed successfully!")
+  else
+      app.alert("No active sprite.")
   end
-}
-dlg:button{id = "cancel", text = "Cancel"}
-dlg:show()
+end
+
+-- Start the import process directly
+startImport()
