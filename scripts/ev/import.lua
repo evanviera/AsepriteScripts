@@ -1,4 +1,4 @@
--- Import PNG files into an open Aseprite file as new layers, spaced out based on the defined grid size.
+-- Import PNG files into an open Aseprite file as new layers, spaced out based on the defined grid size without cropping smaller images.
 
 -- Function to import PNG files
 local function importPNGFiles(sprite, directory)
@@ -14,19 +14,14 @@ local function importPNGFiles(sprite, directory)
               local newLayer = sprite:newLayer()
               newLayer.name = app.fs.fileTitle(filePath)
 
-              -- Create a new image with the size of the grid cell
-              local image = Image(gridWidth, gridHeight)
-              image:clear()
-
-              -- Center the newSprite image in the grid cell
-              local xOffset = math.floor((gridWidth - newSprite.width) / 2)
-              local yOffset = math.floor((gridHeight - newSprite.height) / 2)
-              image:drawImage(newSprite.cels[1].image, Point(xOffset, yOffset))
+              -- Determine the position to center the image within the grid cell
+              local xOffset = math.max(0, math.floor((gridWidth - newSprite.width) / 2))
+              local yOffset = math.max(0, math.floor((gridHeight - newSprite.height) / 2))
 
               -- Add the new image to the sprite
               local cel = sprite:newCel(newLayer, 1)
-              cel.image = image
-              cel.position = Point(col * gridWidth, row * gridHeight)
+              cel.image = newSprite.cels[1].image
+              cel.position = Point(col * gridWidth + xOffset, row * gridHeight + yOffset)
 
               newSprite:close()
 
