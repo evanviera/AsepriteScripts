@@ -12,7 +12,7 @@ local function getPixel(image, x, y)
   end
 end
 
-local function createNormalMapLayer(heightMap, layerName, scaleFactor)
+local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable)
   local normalMap = Image(heightMap.width, heightMap.height, ColorMode.RGB)
   local layer = spr:newLayer()
   layer.name = layerName .. "_Normals"
@@ -30,6 +30,13 @@ local function createNormalMapLayer(heightMap, layerName, scaleFactor)
         local hR = app.pixelColor.rgbaR(getPixel(heightMap, x + 1, y)) / 255.0
         local hU = app.pixelColor.rgbaR(getPixel(heightMap, x, y - 1)) / 255.0
         local hD = app.pixelColor.rgbaR(getPixel(heightMap, x, y + 1)) / 255.0
+
+        if tileable then
+          hL = app.pixelColor.rgbaR(getPixel(heightMap, (x - 1 + heightMap.width) % heightMap.width, y)) / 255.0
+          hR = app.pixelColor.rgbaR(getPixel(heightMap, (x + 1) % heightMap.width, y)) / 255.0
+          hU = app.pixelColor.rgbaR(getPixel(heightMap, x, (y - 1 + heightMap.height) % heightMap.height)) / 255.0
+          hD = app.pixelColor.rgbaR(getPixel(heightMap, x, (y + 1) % heightMap.height)) / 255.0
+        end
 
         local dx = (hR - hL) * 0.5 * scaleFactor
         local dy = (hD - hU) * 0.5 * scaleFactor
@@ -73,9 +80,10 @@ local function main()
     return
   end
 
-  -- Prompt the user for the scale factor
-  local dlg = Dialog("Normal Map Scale Factor")
+  -- Prompt the user for the scale factor and tileable option
+  local dlg = Dialog("Normal Map Settings")
   dlg:number{ id="scaleFactor", label="Scale Factor", text="1.0" }
+  dlg:check{ id="tileable", label="Tileable", selected=false }
   dlg:button{ id="ok", text="OK" }
   dlg:button{ id="cancel", text="Cancel" }
   dlg:show()
@@ -91,9 +99,10 @@ local function main()
     return
   end
 
+  local tileable = data.tileable
   local srcImage = cel.image:clone()
 
-  createNormalMapLayer(srcImage, srcLayer.name, scaleFactor)
+  createNormalMapLayer(srcImage, srcLayer.name, scaleFactor, tileable)
 end
 
 do
