@@ -12,7 +12,7 @@ local function getPixel(image, x, y)
   end
 end
 
-local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable)
+local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable, tileWidth, tileHeight)
   local normalMap = Image(heightMap.width, heightMap.height, ColorMode.RGB)
   local layer = spr:newLayer()
   layer.name = layerName .. "_Normals"
@@ -26,17 +26,10 @@ local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable)
         normalMap:putPixel(x, y, app.pixelColor.rgba(0, 0, 0, 0))
       else
         local hC = app.pixelColor.rgbaR(pixel) / 255.0
-        local hL = app.pixelColor.rgbaR(getPixel(heightMap, x - 1, y)) / 255.0
-        local hR = app.pixelColor.rgbaR(getPixel(heightMap, x + 1, y)) / 255.0
-        local hU = app.pixelColor.rgbaR(getPixel(heightMap, x, y - 1)) / 255.0
-        local hD = app.pixelColor.rgbaR(getPixel(heightMap, x, y + 1)) / 255.0
-
-        if tileable then
-          hL = app.pixelColor.rgbaR(getPixel(heightMap, (x - 1 + heightMap.width) % heightMap.width, y)) / 255.0
-          hR = app.pixelColor.rgbaR(getPixel(heightMap, (x + 1) % heightMap.width, y)) / 255.0
-          hU = app.pixelColor.rgbaR(getPixel(heightMap, x, (y - 1 + heightMap.height) % heightMap.height)) / 255.0
-          hD = app.pixelColor.rgbaR(getPixel(heightMap, x, (y + 1) % heightMap.height)) / 255.0
-        end
+        local hL = app.pixelColor.rgbaR(getPixel(heightMap, (x - 1 + tileWidth) % tileWidth, y)) / 255.0
+        local hR = app.pixelColor.rgbaR(getPixel(heightMap, (x + 1) % tileWidth, y)) / 255.0
+        local hU = app.pixelColor.rgbaR(getPixel(heightMap, x, (y - 1 + tileHeight) % tileHeight)) / 255.0
+        local hD = app.pixelColor.rgbaR(getPixel(heightMap, x, (y + 1) % tileHeight)) / 255.0
 
         local dx = (hR - hL) * 0.5 * scaleFactor
         local dy = (hD - hU) * 0.5 * scaleFactor
@@ -84,6 +77,8 @@ local function main()
   local dlg = Dialog("Normal Map Settings")
   dlg:number{ id="scaleFactor", label="Scale Factor", text="1.0" }
   dlg:check{ id="tileable", label="Tileable", selected=false }
+  dlg:number{ id="tileWidth", label="Tile Width", text=tostring(cel.image.width) }
+  dlg:number{ id="tileHeight", label="Tile Height", text=tostring(cel.image.height) }
   dlg:button{ id="ok", text="OK" }
   dlg:button{ id="cancel", text="Cancel" }
   dlg:show()
@@ -100,9 +95,17 @@ local function main()
   end
 
   local tileable = data.tileable
+  local tileWidth = data.tileWidth
+  local tileHeight = data.tileHeight
+
+  if tileWidth <= 0 or tileHeight <= 0 then
+    app.alert("Tile width and height must be greater than 0")
+    return
+  end
+
   local srcImage = cel.image:clone()
 
-  createNormalMapLayer(srcImage, srcLayer.name, scaleFactor, tileable)
+  createNormalMapLayer(srcImage, srcLayer.name, scaleFactor, tileable, tileWidth, tileHeight)
 end
 
 do
