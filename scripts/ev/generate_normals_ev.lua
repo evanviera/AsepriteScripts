@@ -12,11 +12,23 @@ local function getPixel(image, x, y)
   end
 end
 
-local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable, tileWidth, tileHeight)
+local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable, tileWidth, tileHeight, overwrite)
+  local normalLayerName = layerName .. "_Normals"
+  local existingLayer = nil
+
+  if overwrite then
+    for _, layer in ipairs(spr.layers) do
+      if layer.name == normalLayerName then
+        existingLayer = layer
+        break
+      end
+    end
+  end
+
   local normalMap = Image(heightMap.width, heightMap.height, ColorMode.RGB)
-  local layer = spr:newLayer()
-  layer.name = layerName .. "_Normals"
-  local cel = spr:newCel(layer, 1, normalMap)
+  local layer = existingLayer or spr:newLayer()
+  layer.name = normalLayerName
+  local cel = layer:cel(1) or spr:newCel(layer, 1, normalMap)
 
   for y = 0, heightMap.height - 1 do
     for x = 0, heightMap.width - 1 do
@@ -73,12 +85,18 @@ local function main()
     return
   end
 
+  -- Get the document's grid size
+  local gridBounds = app.activeSprite.gridBounds
+  local defaultTileWidth = gridBounds.width
+  local defaultTileHeight = gridBounds.height
+
   -- Prompt the user for the scale factor and tileable option
   local dlg = Dialog("Normal Map Settings")
   dlg:number{ id="scaleFactor", label="Scale Factor", text="1.0" }
-  dlg:check{ id="tileable", label="Tileable", selected=false }
-  dlg:number{ id="tileWidth", label="Tile Width", text=tostring(cel.image.width) }
-  dlg:number{ id="tileHeight", label="Tile Height", text=tostring(cel.image.height) }
+  dlg:check{ id="tileable", label="Tileable", selected=true }
+  dlg:number{ id="tileWidth", label="Tile Width", text=tostring(defaultTileWidth) }
+  dlg:number{ id="tileHeight", label="Tile Height", text=tostring(defaultTileHeight) }
+  dlg:check{ id="overwrite", label="Overwrite Existing", selected=true }
   dlg:button{ id="ok", text="OK" }
   dlg:button{ id="cancel", text="Cancel" }
   dlg:show()
@@ -97,6 +115,7 @@ local function main()
   local tileable = data.tileable
   local tileWidth = data.tileWidth
   local tileHeight = data.tileHeight
+  local overwrite = data.overwrite
 
   if tileWidth <= 0 or tileHeight <= 0 then
     app.alert("Tile width and height must be greater than 0")
@@ -105,7 +124,7 @@ local function main()
 
   local srcImage = cel.image:clone()
 
-  createNormalMapLayer(srcImage, srcLayer.name, scaleFactor, tileable, tileWidth, tileHeight)
+  createNormalMapLayer(srcImage, srcLayer.name, scaleFactor, tileable, tileWidth, tileHeight, overwrite)
 end
 
 do
