@@ -38,10 +38,16 @@ local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable,
         normalMap:putPixel(x, y, app.pixelColor.rgba(0, 0, 0, 0))
       else
         local hC = app.pixelColor.rgbaR(pixel) / 255.0
-        local hL = app.pixelColor.rgbaR(getPixel(heightMap, (x - 1 + tileWidth) % tileWidth, y)) / 255.0
-        local hR = app.pixelColor.rgbaR(getPixel(heightMap, (x + 1) % tileWidth, y)) / 255.0
-        local hU = app.pixelColor.rgbaR(getPixel(heightMap, x, (y - 1 + tileHeight) % tileHeight)) / 255.0
-        local hD = app.pixelColor.rgbaR(getPixel(heightMap, x, (y + 1) % tileHeight)) / 255.0
+
+        local xL = (x - 1 + tileWidth) % tileWidth + (math.floor(x / tileWidth) * tileWidth)
+        local xR = (x + 1) % tileWidth + (math.floor(x / tileWidth) * tileWidth)
+        local yU = (y - 1 + tileHeight) % tileHeight + (math.floor(y / tileHeight) * tileHeight)
+        local yD = (y + 1) % tileHeight + (math.floor(y / tileHeight) * tileHeight)
+
+        local hL = app.pixelColor.rgbaR(getPixel(heightMap, xL, y)) / 255.0
+        local hR = app.pixelColor.rgbaR(getPixel(heightMap, xR, y)) / 255.0
+        local hU = app.pixelColor.rgbaR(getPixel(heightMap, x, yU)) / 255.0
+        local hD = app.pixelColor.rgbaR(getPixel(heightMap, x, yD)) / 255.0
 
         local dx = (hR - hL) * 0.5 * scaleFactor
         local dy = (hD - hU) * 0.5 * scaleFactor
