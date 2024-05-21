@@ -12,7 +12,7 @@ local function getPixel(image, x, y)
   end
 end
 
-local function createNormalMapLayer(heightMap, layerName)
+local function createNormalMapLayer(heightMap, layerName, scaleFactor)
   local normalMap = Image(heightMap.width, heightMap.height, ColorMode.RGB)
   local layer = spr:newLayer()
   layer.name = layerName .. "_Normals"
@@ -31,8 +31,8 @@ local function createNormalMapLayer(heightMap, layerName)
         local hU = app.pixelColor.rgbaR(getPixel(heightMap, x, y - 1)) / 255.0
         local hD = app.pixelColor.rgbaR(getPixel(heightMap, x, y + 1)) / 255.0
 
-        local dx = (hR - hL) * 0.5
-        local dy = (hD - hU) * 0.5
+        local dx = (hR - hL) * 0.5 * scaleFactor
+        local dy = (hD - hU) * 0.5 * scaleFactor
 
         local nx = dx
         local ny = dy
@@ -73,9 +73,27 @@ local function main()
     return
   end
 
+  -- Prompt the user for the scale factor
+  local dlg = Dialog("Normal Map Scale Factor")
+  dlg:number{ id="scaleFactor", label="Scale Factor", text="1.0" }
+  dlg:button{ id="ok", text="OK" }
+  dlg:button{ id="cancel", text="Cancel" }
+  dlg:show()
+
+  local data = dlg.data
+  if not data.ok then
+    return
+  end
+
+  local scaleFactor = data.scaleFactor
+  if scaleFactor <= 0 then
+    app.alert("Scale factor must be greater than 0")
+    return
+  end
+
   local srcImage = cel.image:clone()
 
-  createNormalMapLayer(srcImage, srcLayer.name)
+  createNormalMapLayer(srcImage, srcLayer.name, scaleFactor)
 end
 
 do
