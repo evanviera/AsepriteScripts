@@ -15,10 +15,9 @@ end
 local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable, tileWidth, tileHeight, overwrite)
   local normalLayerName = layerName .. "_Normals"
   local existingLayer = nil
-  local parentGroup = app.activeLayer.parent
 
   if overwrite then
-    for _, layer in ipairs(parentGroup.layers) do
+    for _, layer in ipairs(spr.layers) do
       if layer.name == normalLayerName then
         existingLayer = layer
         break
@@ -28,9 +27,6 @@ local function createNormalMapLayer(heightMap, layerName, scaleFactor, tileable,
 
   local normalMap = Image(heightMap.width, heightMap.height, ColorMode.RGB)
   local layer = existingLayer or spr:newLayer()
-  if not existingLayer then
-    parentGroup:insert(layer)
-  end
   layer.name = normalLayerName
   local cel = layer:cel(1) or spr:newCel(layer, 1, normalMap)
 
