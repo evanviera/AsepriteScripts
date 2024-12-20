@@ -1,8 +1,30 @@
 -- Lua Script for Aseprite to Select All Tiles of a Specific Tile Index
--- Set the tile index you want to select in the `TARGET_TILE_INDEX` variable
+-- Prompts the user to input the target tile index at runtime
 
--- Define the target tile index to select
-local TARGET_TILE_INDEX = 2  -- Change this to the desired tile index
+-- Create a dialog to prompt the user for the tile index
+local dlg = Dialog("Tile Index Selection")
+dlg:label{ text="Enter the tile index to select:" }
+dlg:number{ id="tile_index", label="Tile Index:", text="0" }
+dlg:button{ id="ok", text="OK" }
+dlg:button{ id="cancel", text="Cancel" }
+
+-- Show dialog and validate input
+dlg:show()
+
+-- Ensure the dialog was not closed without proper input
+if not dlg.data or dlg.data.tile_index == nil then
+  app.alert("Operation cancelled or invalid input. Please enter a valid non-negative integer.")
+  return
+end
+
+-- Get the data entered by the user
+local data = dlg.data
+if not data or type(data.tile_index) ~= "number" or data.tile_index < 0 or math.floor(data.tile_index) ~= data.tile_index then
+  app.alert("Operation cancelled or invalid input. Please enter a valid non-negative integer.")
+  return
+end
+
+local TARGET_TILE_INDEX = math.floor(data.tile_index)
 
 -- Access the active sprite
 local sprite = app.activeSprite
@@ -26,7 +48,14 @@ if not cel then
 end
 
 -- Get the tilemap and tileset
-local tilemap = Image(cel.image)
+local tilemap
+if cel.image then
+  tilemap = cel.image
+else
+  app.alert("Invalid or null cel image detected!")
+  return
+end
+
 local tileset = layer.tileset
 if not tileset then
   app.alert("No tileset found in the selected tilemap layer!")
@@ -41,26 +70,62 @@ local tileHeight = tileset.grid.tileSize.height
 local celOffsetX = cel.position.x
 local celOffsetY = cel.position.y
 
--- Create a selection object
-local selection = Selection()
+-- Create a new selection object
+sprite.selection = Selection()
+local selection = sprite.selection
 
--- Iterate through each tile in the tilemap
-for y = 0, tilemap.height - 1 do
-  for x = 0, tilemap.width - 1 do
+-- Pre-compute constants for optimization
+local pixelXBase = celOffsetX
+local pixelYBase = celOffsetY
+local tilemapWidth = tilemap.width
+local tilemapHeight = tilemap.height
+
+-- Initialize rectangles table
+local rectangles = {}
+
+-- Batch rectangles to minimize individual operations
+local batchStartX, batchEndX = nil, nil
+local tileCount = 0
+local startTime = os.clock()
+for y = 0, tilemapHeight - 1 do
+  local pixelY = y * tileHeight + pixelYBase
+  batchStartX, batchEndX = nil, nil
+  for x = 0, tilemapWidth - 1 do
     local tileIndex = tilemap:getPixel(x, y)
     if tileIndex == TARGET_TILE_INDEX then
-      -- Adjust the selection to account for tile size and cel offset
-      local pixelX = x * tileWidth + celOffsetX
-      local pixelY = y * tileHeight + celOffsetY
-      selection:add(Rectangle(pixelX, pixelY, tileWidth, tileHeight))
+      if not batchStartX then
+        batchStartX = x
+      end
+      batchEndX = x
+    elseif batchStartX and batchEndX then
+      local pixelXStart = batchStartX * tileWidth + pixelXBase
+      local pixelXEnd = (batchEndX + 1) * tileWidth + pixelXBase
+      table.insert(rectangles, Rectangle(pixelXStart, pixelY, pixelXEnd - pixelXStart, tileHeight))
+      tileCount = tileCount + (batchEndX - batchStartX + 1)
+      batchStartX, batchEndX = nil, nil
     end
   end
+  if batchStartX and batchEndX then
+    local pixelXStart = batchStartX * tileWidth + pixelXBase
+    local pixelXEnd = (batchEndX + 1) * tileWidth + pixelXBase
+    table.insert(rectangles, Rectangle(pixelXStart, pixelY, pixelXEnd - pixelXStart, tileHeight))
+    tileCount = tileCount + (batchEndX - batchStartX + 1)
+  end
+end
+
+-- Add all rectangles to the selection at once
+for _, rect in ipairs(rectangles) do
+  selection:add(rect)
 end
 
 -- Apply the selection to the sprite
 sprite.selection = selection
 
 -- Notify the user
-do
-  app.alert("Selection of tiles with index " .. TARGET_TILE_INDEX .. " completed.")
+local endTime = os.clock()
+local elapsedTime = endTime - startTime
+if tileCount > 0 then
+  app.alert("Selection of tiles with index " .. TARGET_TILE_INDEX .. " completed in " .. string.format("%.2f", elapsedTime) .. " seconds. Total tiles selected: " .. tileCount)
+else
+  app.alert("No tiles with index " .. TARGET_TILE_INDEX .. " were found. Process completed in " .. string.format("%.2f", elapsedTime) .. " seconds.")
 end
