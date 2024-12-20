@@ -25,13 +25,17 @@ if not cel then
   return
 end
 
--- Get the tilemap
+-- Get the tilemap and tileset
 local tilemap = Image(cel.image)
 local tileset = layer.tileset
 if not tileset then
   app.alert("No tileset found in the selected tilemap layer!")
   return
 end
+
+-- Get tile size from the tileset
+local tileWidth = tileset.grid.tileSize.width
+local tileHeight = tileset.grid.tileSize.height
 
 -- Create a selection object
 local selection = Selection()
@@ -41,7 +45,10 @@ for y = 0, tilemap.height - 1 do
   for x = 0, tilemap.width - 1 do
     local tileIndex = tilemap:getPixel(x, y)
     if tileIndex == TARGET_TILE_INDEX then
-      selection:add(Rectangle(x, y, 1, 1))
+      -- Adjust the selection to account for tile size
+      local pixelX = x * tileWidth
+      local pixelY = y * tileHeight
+      selection:add(Rectangle(pixelX, pixelY, tileWidth, tileHeight))
     end
   end
 end
