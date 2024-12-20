@@ -37,6 +37,10 @@ end
 local tileWidth = tileset.grid.tileSize.width
 local tileHeight = tileset.grid.tileSize.height
 
+-- Get the cel's position offset
+local celOffsetX = cel.position.x
+local celOffsetY = cel.position.y
+
 -- Create a selection object
 local selection = Selection()
 
@@ -45,9 +49,9 @@ for y = 0, tilemap.height - 1 do
   for x = 0, tilemap.width - 1 do
     local tileIndex = tilemap:getPixel(x, y)
     if tileIndex == TARGET_TILE_INDEX then
-      -- Adjust the selection to account for tile size
-      local pixelX = x * tileWidth
-      local pixelY = y * tileHeight
+      -- Adjust the selection to account for tile size and cel offset
+      local pixelX = x * tileWidth + celOffsetX
+      local pixelY = y * tileHeight + celOffsetY
       selection:add(Rectangle(pixelX, pixelY, tileWidth, tileHeight))
     end
   end
